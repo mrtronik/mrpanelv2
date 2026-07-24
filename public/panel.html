@@ -1,0 +1,1978 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MRPanel — Hosting Control Panel</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        :root {
+            --bg: #0b0d13;
+            --bg2: #10131b;
+            --card: #161a26;
+            --card-hover: #1c2130;
+            --border: #232940;
+            --border-light: #2d3450;
+            --text: #e4e7f0;
+            --text-dim: #8890ab;
+            --text-muted: #555d7a;
+            --accent: #00d68f;
+            --accent-dim: rgba(0,214,143,0.12);
+            --accent-hover: #00b876;
+            --danger: #ff4d6a;
+            --danger-dim: rgba(255,77,106,0.12);
+            --warn: #ffb020;
+            --warn-dim: rgba(255,176,32,0.12);
+            --info: #3b9eff;
+            --info-dim: rgba(59,158,255,0.12);
+            --sidebar-w: 260px;
+            --header-h: 64px;
+            --radius: 10px;
+            --radius-sm: 6px;
+        }
+
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+        /* ===== SIDEBAR ===== */
+        .sidebar {
+            position: fixed; left: 0; top: 0; bottom: 0;
+            width: var(--sidebar-w);
+            background: var(--bg2);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            z-index: 100;
+            transition: transform 0.3s ease;
+        }
+        .sidebar-brand {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; gap: 12px;
+        }
+        .sidebar-brand .logo-icon {
+            width: 38px; height: 38px;
+            background: linear-gradient(135deg, var(--accent), #00a870);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; font-size: 18px; color: #0b0d13;
+        }
+        .sidebar-brand h1 {
+            font-size: 20px; font-weight: 800;
+            background: linear-gradient(135deg, var(--accent), #66ffcc);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+        .sidebar-brand span { font-size: 11px; color: var(--text-muted); display: block; margin-top: 2px; }
+
+        .sidebar-nav { flex: 1; padding: 16px 12px; overflow-y: auto; }
+        .nav-section { margin-bottom: 8px; }
+        .nav-section-title {
+            font-size: 10px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1.5px; color: var(--text-muted);
+            padding: 8px 12px 6px;
+        }
+        .nav-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 14px; border-radius: var(--radius-sm);
+            cursor: pointer; transition: all 0.15s ease;
+            color: var(--text-dim); font-size: 14px; font-weight: 500;
+            position: relative; user-select: none;
+        }
+        .nav-item:hover { background: var(--card); color: var(--text); }
+        .nav-item.active {
+            background: var(--accent-dim); color: var(--accent);
+        }
+        .nav-item.active::before {
+            content: ''; position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+            width: 3px; height: 20px; background: var(--accent); border-radius: 0 3px 3px 0;
+        }
+        .nav-item i { width: 20px; text-align: center; font-size: 15px; }
+        .nav-item .badge {
+            margin-left: auto; font-size: 11px; font-weight: 600;
+            padding: 2px 8px; border-radius: 10px;
+            background: var(--accent-dim); color: var(--accent);
+        }
+
+        .sidebar-footer {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+        .server-status {
+            display: flex; align-items: center; gap: 10px;
+            padding: 10px 12px; background: var(--card); border-radius: var(--radius-sm);
+        }
+        .status-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+            background: var(--accent); box-shadow: 0 0 8px var(--accent);
+            animation: pulse-dot 2s infinite;
+        }
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+        }
+        .server-status .info { font-size: 12px; }
+        .server-status .info strong { display: block; font-size: 13px; color: var(--text); }
+        .server-status .info span { color: var(--text-muted); }
+
+        /* ===== MAIN ===== */
+        .main-wrap {
+            margin-left: var(--sidebar-w);
+            height: 100vh; display: flex; flex-direction: column;
+        }
+
+        /* Header */
+        .top-header {
+            height: var(--header-h); min-height: var(--header-h);
+            border-bottom: 1px solid var(--border);
+            display: flex; align-items: center; padding: 0 28px; gap: 20px;
+            background: var(--bg2);
+        }
+        .mobile-toggle {
+            display: none; background: none; border: none; color: var(--text-dim);
+            font-size: 20px; cursor: pointer;
+        }
+        .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+        .breadcrumb span { color: var(--text-muted); }
+        .breadcrumb .current { color: var(--text); font-weight: 600; }
+
+        .header-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+        .header-search {
+            display: flex; align-items: center; gap: 8px;
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius-sm); padding: 8px 14px;
+            transition: border-color 0.15s;
+        }
+        .header-search:focus-within { border-color: var(--accent); }
+        .header-search i { color: var(--text-muted); font-size: 13px; }
+        .header-search input {
+            background: none; border: none; outline: none;
+            color: var(--text); font-size: 13px; width: 180px;
+            font-family: inherit;
+        }
+        .header-search input::placeholder { color: var(--text-muted); }
+
+        .header-btn {
+            width: 38px; height: 38px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); background: var(--card);
+            color: var(--text-dim); cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s; position: relative; font-size: 15px;
+        }
+        .header-btn:hover { border-color: var(--border-light); color: var(--text); }
+        .header-btn .notif-dot {
+            position: absolute; top: 6px; right: 6px;
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--danger);
+        }
+        .header-user {
+            display: flex; align-items: center; gap: 10px;
+            padding: 6px 12px 6px 6px; border-radius: var(--radius-sm);
+            cursor: pointer; transition: background 0.15s; margin-left: 4px;
+        }
+        .header-user:hover { background: var(--card); }
+        .header-user .avatar {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: linear-gradient(135deg, var(--accent), #00a870);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 13px; color: #0b0d13;
+        }
+        .header-user .name { font-size: 13px; font-weight: 600; }
+        .header-user .role { font-size: 11px; color: var(--text-muted); }
+
+        /* Content area */
+        .content { flex: 1; overflow-y: auto; padding: 28px; }
+        .page { display: none; animation: fadeUp 0.25s ease; }
+        .page.active { display: block; }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ===== COMPONENTS ===== */
+        .page-title { font-size: 24px; font-weight: 800; margin-bottom: 4px; }
+        .page-desc { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 20px;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+        .stat-card:hover { border-color: var(--border-light); transform: translateY(-2px); }
+        .stat-card .stat-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+        .stat-card .stat-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center; font-size: 16px;
+        }
+        .stat-card .stat-change {
+            font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 6px;
+        }
+        .stat-card .stat-change.up { color: var(--accent); background: var(--accent-dim); }
+        .stat-card .stat-change.down { color: var(--danger); background: var(--danger-dim); }
+        .stat-card .stat-value { font-size: 28px; font-weight: 800; margin-bottom: 4px; font-family: 'JetBrains Mono', monospace; }
+        .stat-card .stat-label { font-size: 13px; color: var(--text-muted); }
+        .stat-card .stat-bar { height: 4px; background: var(--border); border-radius: 2px; margin-top: 12px; overflow: hidden; }
+        .stat-card .stat-bar-fill { height: 100%; border-radius: 2px; transition: width 1s ease; }
+
+        .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 24px; }
+        .card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); overflow: hidden;
+        }
+        .card-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+        }
+        .card-header h3 { font-size: 15px; font-weight: 700; }
+        .card-body { padding: 20px; }
+
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th {
+            text-align: left; padding: 12px 16px;
+            font-size: 11px; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 1px; color: var(--text-muted);
+            border-bottom: 1px solid var(--border); background: var(--bg2);
+        }
+        td {
+            padding: 14px 16px; font-size: 13px;
+            border-bottom: 1px solid var(--border);
+        }
+        tr:last-child td { border-bottom: none; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+
+        .status-badge {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 600;
+        }
+        .status-badge.active { color: var(--accent); background: var(--accent-dim); }
+        .status-badge.inactive { color: var(--text-muted); background: rgba(85,93,122,0.15); }
+        .status-badge.error { color: var(--danger); background: var(--danger-dim); }
+        .status-badge.warning { color: var(--warn); background: var(--warn-dim); }
+        .status-badge .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+
+        .btn {
+            display: inline-flex; align-items: center; gap: 8px;
+            padding: 9px 18px; border-radius: var(--radius-sm);
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            border: 1px solid transparent; transition: all 0.15s;
+            font-family: inherit; user-select: none;
+        }
+        .btn-primary {
+            background: var(--accent); color: #0b0d13; border-color: var(--accent);
+        }
+        .btn-primary:hover { background: var(--accent-hover); }
+        .btn-secondary {
+            background: var(--card); color: var(--text); border-color: var(--border);
+        }
+        .btn-secondary:hover { border-color: var(--border-light); }
+        .btn-danger { background: var(--danger-dim); color: var(--danger); border-color: transparent; }
+        .btn-danger:hover { background: rgba(255,77,106,0.2); }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        .btn-icon {
+            width: 32px; height: 32px; padding: 0; justify-content: center;
+            border-radius: var(--radius-sm); background: var(--card);
+            border: 1px solid var(--border); color: var(--text-dim); cursor: pointer;
+            transition: all 0.15s; font-size: 13px;
+        }
+        .btn-icon:hover { color: var(--text); border-color: var(--border-light); }
+        .btn-icon.danger:hover { color: var(--danger); border-color: var(--danger); }
+
+        .toolbar { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+        .toolbar-right { margin-left: auto; display: flex; gap: 8px; }
+
+        .form-group { margin-bottom: 18px; }
+        .form-group label {
+            display: block; font-size: 13px; font-weight: 600;
+            margin-bottom: 6px; color: var(--text-dim);
+        }
+        .form-control {
+            width: 100%; padding: 10px 14px; border-radius: var(--radius-sm);
+            border: 1px solid var(--border); background: var(--bg);
+            color: var(--text); font-size: 14px; font-family: inherit;
+            transition: border-color 0.15s; outline: none;
+        }
+        .form-control:focus { border-color: var(--accent); }
+        .form-control::placeholder { color: var(--text-muted); }
+        select.form-control { cursor: pointer; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .form-hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.65);
+            z-index: 1000; display: none; align-items: center; justify-content: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-overlay.show { display: flex; }
+        .modal {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 14px; width: 520px; max-width: 95vw;
+            max-height: 85vh; overflow-y: auto;
+            animation: modalIn 0.2s ease;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 20px 24px; border-bottom: 1px solid var(--border);
+        }
+        .modal-header h2 { font-size: 17px; font-weight: 700; }
+        .modal-close {
+            width: 32px; height: 32px; border-radius: 8px;
+            border: none; background: var(--bg); color: var(--text-dim);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            transition: all 0.15s; font-size: 14px;
+        }
+        .modal-close:hover { color: var(--text); background: var(--border); }
+        .modal-body { padding: 24px; }
+        .modal-footer {
+            display: flex; justify-content: flex-end; gap: 10px;
+            padding: 16px 24px; border-top: 1px solid var(--border);
+        }
+
+        /* Toast */
+        .toast-container {
+            position: fixed; top: 20px; right: 20px; z-index: 2000;
+            display: flex; flex-direction: column; gap: 10px;
+        }
+        .toast {
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 20px; border-radius: var(--radius);
+            background: var(--card); border: 1px solid var(--border);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+            animation: toastIn 0.3s ease;
+            min-width: 300px;
+        }
+        .toast.success .toast-icon { color: var(--accent); }
+        .toast.error .toast-icon { color: var(--danger); }
+        .toast.warning .toast-icon { color: var(--warn); }
+        .toast-icon { font-size: 18px; }
+        .toast-msg { font-size: 13px; font-weight: 500; flex: 1; }
+        .toast-close {
+            background: none; border: none; color: var(--text-muted);
+            cursor: pointer; font-size: 14px; padding: 4px;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(40px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        /* File Manager */
+        .file-breadcrumb {
+            display: flex; align-items: center; gap: 4px;
+            padding: 12px 0; font-size: 13px; flex-wrap: wrap;
+        }
+        .file-breadcrumb span { color: var(--text-muted); cursor: pointer; }
+        .file-breadcrumb span:hover { color: var(--accent); }
+        .file-breadcrumb .sep { color: var(--text-muted); cursor: default; }
+        .file-breadcrumb .current { color: var(--text); cursor: default; font-weight: 600; }
+        .file-list { display: flex; flex-direction: column; }
+        .file-item {
+            display: flex; align-items: center; gap: 12px;
+            padding: 10px 16px; border-radius: var(--radius-sm);
+            cursor: pointer; transition: background 0.1s; font-size: 13px;
+        }
+        .file-item:hover { background: rgba(255,255,255,0.03); }
+        .file-item.selected { background: var(--accent-dim); }
+        .file-item .fi-icon { width: 24px; text-align: center; font-size: 16px; }
+        .file-item .fi-icon.folder { color: var(--warn); }
+        .file-item .fi-icon.file { color: var(--info); }
+        .file-item .fi-icon.img { color: #e879f9; }
+        .file-item .fi-icon.archive { color: var(--danger); }
+        .file-item .fi-name { flex: 1; }
+        .file-item .fi-size { color: var(--text-muted); width: 80px; text-align: right; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        .file-item .fi-perm { color: var(--text-muted); width: 90px; text-align: center; font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+        .file-item .fi-date { color: var(--text-muted); width: 130px; text-align: right; font-size: 12px; }
+        .file-item .fi-actions { display: flex; gap: 4px; opacity: 0; transition: opacity 0.15s; }
+        .file-item:hover .fi-actions { opacity: 1; }
+
+        /* Terminal */
+        .terminal-wrap {
+            background: #000; border-radius: var(--radius); overflow: hidden;
+            border: 1px solid var(--border); height: 500px; display: flex; flex-direction: column;
+        }
+        .terminal-bar {
+            display: flex; align-items: center; gap: 8px;
+            padding: 10px 16px; background: #111; border-bottom: 1px solid #222;
+        }
+        .terminal-bar .dot { width: 10px; height: 10px; border-radius: 50%; }
+        .terminal-bar .dot.r { background: #ff5f57; }
+        .terminal-bar .dot.y { background: #febc2e; }
+        .terminal-bar .dot.g { background: #28c840; }
+        .terminal-bar .title { margin-left: 8px; font-size: 12px; color: #666; font-family: 'JetBrains Mono', monospace; }
+        .terminal-output {
+            flex: 1; overflow-y: auto; padding: 16px;
+            font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 1.7;
+        }
+        .terminal-output .line { white-space: pre-wrap; word-break: break-all; }
+        .terminal-output .prompt { color: var(--accent); }
+        .terminal-output .cmd { color: #e4e7f0; }
+        .terminal-output .out { color: #8890ab; }
+        .terminal-output .err { color: var(--danger); }
+        .terminal-input-line {
+            display: flex; align-items: center; gap: 0;
+            padding: 12px 16px; background: #080808;
+            border-top: 1px solid #1a1a1a;
+        }
+        .terminal-input-line .prompt-text {
+            color: var(--accent); font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; white-space: nowrap;
+        }
+        .terminal-input-line input {
+            flex: 1; background: none; border: none; outline: none;
+            color: #e4e7f0; font-family: 'JetBrains Mono', monospace;
+            font-size: 13px; margin-left: 8px;
+        }
+
+        /* Log viewer */
+        .log-viewer {
+            background: #0a0c10; border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 16px;
+            font-family: 'JetBrains Mono', monospace; font-size: 12px;
+            line-height: 1.8; height: 450px; overflow-y: auto;
+        }
+        .log-line { white-space: pre-wrap; }
+        .log-line .ts { color: var(--text-muted); }
+        .log-line .lvl-info { color: var(--info); }
+        .log-line .lvl-warn { color: var(--warn); }
+        .log-line .lvl-err { color: var(--danger); }
+        .log-line .msg { color: var(--text-dim); }
+        .log-tabs { display: flex; gap: 4px; margin-bottom: 16px; }
+        .log-tab {
+            padding: 8px 18px; border-radius: var(--radius-sm);
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            background: var(--card); border: 1px solid var(--border);
+            color: var(--text-dim); transition: all 0.15s;
+        }
+        .log-tab:hover { color: var(--text); }
+        .log-tab.active { background: var(--accent-dim); color: var(--accent); border-color: transparent; }
+
+        /* Settings */
+        .settings-section {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: var(--radius); margin-bottom: 16px; overflow: hidden;
+        }
+        .settings-section-header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 16px 20px; border-bottom: 1px solid var(--border);
+        }
+        .settings-section-header h3 { font-size: 15px; font-weight: 700; }
+        .settings-section-body { padding: 20px; }
+
+        .toggle-switch {
+            width: 44px; height: 24px; border-radius: 12px;
+            background: var(--border); cursor: pointer; position: relative;
+            transition: background 0.2s;
+        }
+        .toggle-switch.on { background: var(--accent); }
+        .toggle-switch::after {
+            content: ''; position: absolute; top: 3px; left: 3px;
+            width: 18px; height: 18px; border-radius: 50%;
+            background: white; transition: transform 0.2s;
+        }
+        .toggle-switch.on::after { transform: translateX(20px); }
+
+        .setting-row {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 0; border-bottom: 1px solid var(--border);
+        }
+        .setting-row:last-child { border-bottom: none; }
+        .setting-info .setting-name { font-size: 14px; font-weight: 600; }
+        .setting-info .setting-desc { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        /* Empty state */
+        .empty-state {
+            text-align: center; padding: 60px 20px; color: var(--text-muted);
+        }
+        .empty-state i { font-size: 48px; margin-bottom: 16px; opacity: 0.3; }
+        .empty-state p { font-size: 14px; }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .cards-grid { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 768px) {
+            .sidebar { transform: translateX(-100%); }
+            .sidebar.open { transform: translateX(0); }
+            .main-wrap { margin-left: 0; }
+            .mobile-toggle { display: flex; }
+            .stats-grid { grid-template-columns: 1fr; }
+            .form-row { grid-template-columns: 1fr; }
+            .file-item .fi-perm, .file-item .fi-date { display: none; }
+            .header-search { display: none; }
+        }
+
+        /* Background ambience */
+        .content::before {
+            content: ''; position: fixed; top: -200px; right: -200px;
+            width: 500px; height: 500px; border-radius: 50%;
+            background: radial-gradient(circle, rgba(0,214,143,0.04) 0%, transparent 70%);
+            pointer-events: none; z-index: 0;
+        }
+        .content > * { position: relative; z-index: 1; }
+    </style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+        <div class="logo-icon">MR</div>
+        <div>
+            <h1>MRPanel</h1>
+            <span>Control Panel v1.0</span>
+        </div>
+    </div>
+    <nav class="sidebar-nav">
+        <div class="nav-section">
+            <div class="nav-section-title">Utama</div>
+            <div class="nav-item active" data-page="dashboard">
+                <i class="fas fa-th-large"></i> Dashboard
+            </div>
+            <div class="nav-item" data-page="websites">
+                <i class="fas fa-globe"></i> Websites
+                <span class="badge">3</span>
+            </div>
+            <div class="nav-item" data-page="databases">
+                <i class="fas fa-database"></i> Databases
+            </div>
+            <div class="nav-item" data-page="filemanager">
+                <i class="fas fa-folder-open"></i> File Manager
+            </div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Keamanan</div>
+            <div class="nav-item" data-page="ssl">
+                <i class="fas fa-shield-halved"></i> SSL Certificates
+            </div>
+            <div class="nav-item" data-page="firewall">
+                <i class="fas fa-fire-flame-curved"></i> Firewall
+            </div>
+        </div>
+        <div class="nav-section">
+            <div class="nav-section-title">Advanced</div>
+            <div class="nav-item" data-page="terminal">
+                <i class="fas fa-terminal"></i> Terminal
+            </div>
+            <div class="nav-item" data-page="logs">
+                <i class="fas fa-scroll"></i> Log Viewer
+            </div>
+            <div class="nav-item" data-page="settings">
+                <i class="fas fa-gear"></i> Settings
+            </div>
+        </div>
+    </nav>
+    <div class="sidebar-footer">
+        <div class="server-status">
+            <div class="status-dot"></div>
+            <div class="info">
+                <strong>Ubuntu 22.04 LTS</strong>
+                <span>OpenLiteSpeed v1.7.18</span>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- Main -->
+<div class="main-wrap">
+    <header class="top-header">
+        <button class="mobile-toggle" onclick="document.getElementById('sidebar').classList.toggle('open')">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="breadcrumb">
+            <span>MRPanel</span>
+            <i class="fas fa-chevron-right" style="font-size:10px;color:var(--text-muted)"></i>
+            <span class="current" id="breadcrumb-current">Dashboard</span>
+        </div>
+        <div class="header-right">
+            <div class="header-search">
+                <i class="fas fa-search"></i>
+                <input type="text" placeholder="Cari fitur...">
+            </div>
+            <button class="header-btn" title="Notifikasi">
+                <i class="fas fa-bell"></i>
+                <span class="notif-dot"></span>
+            </button>
+            <button class="header-btn" title="Restart Server" onclick="showToast('Server berhasil di-restart','success')">
+                <i class="fas fa-rotate-right"></i>
+            </button>
+            <div class="header-user">
+                <div class="avatar">AD</div>
+                <div>
+                    <div class="name">Admin</div>
+                    <div class="role">Super Admin</div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="content">
+        <!-- ====== DASHBOARD ====== -->
+        <div class="page active" id="page-dashboard">
+            <h2 class="page-title">Dashboard</h2>
+            <p class="page-desc">Ringkasan performa dan status server kamu.</p>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background:var(--accent-dim);color:var(--accent)">
+                            <i class="fas fa-microchip"></i>
+                        </div>
+                        <span class="stat-change up"><i class="fas fa-arrow-up"></i> 2.1%</span>
+                    </div>
+                    <div class="stat-value" id="cpu-val">23%</div>
+                    <div class="stat-label">Penggunaan CPU</div>
+                    <div class="stat-bar"><div class="stat-bar-fill" id="cpu-bar" style="width:23%;background:var(--accent)"></div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background:var(--info-dim);color:var(--info)">
+                            <i class="fas fa-memory"></i>
+                        </div>
+                        <span class="stat-change up"><i class="fas fa-arrow-up"></i> 5.3%</span>
+                    </div>
+					@php
+$ram = shell_exec("free -h");
+@endphp
+@php
+$disk = shell_exec("df -h");
+@endphp
+                    <div class="stat-value" id="ram-valL">{{ $ram }} / 4 GB</div>
+                    <div class="stat-label">Penggunaan RAM</div>
+                    <div class="stat-bar"><div class="stat-bar-fill" id="ram-bar" style="width:30%;background:var(--info)"></div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background:var(--warn-dim);color:var(--warn)">
+                            <i class="fas fa-hard-drive"></i>
+                        </div>
+                        <span class="stat-change down"><i class="fas fa-arrow-down"></i> 1.8%</span>
+                    </div>
+                    <div class="stat-value" id="disk-valD">{{ $disk }}</div>
+                    <div class="stat-label">Penggunaan Disk (dari 50 GB)</div>
+                    <div class="stat-bar"><div class="stat-bar-fill" id="disk-bar" style="width:37%;background:var(--warn)"></div></div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-header">
+                        <div class="stat-icon" style="background:var(--danger-dim);color:var(--danger)">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <span class="stat-change up"><i class="fas fa-arrow-up"></i> 12%</span>
+                    </div>
+                    <div class="stat-value" id="bw-val">2.4 GB</div>
+                    <div class="stat-label">Bandwidth Hari Ini</div>
+                    <div class="stat-bar"><div class="stat-bar-fill" id="bw-bar" style="width:24%;background:var(--danger)"></div></div>
+                </div>
+            </div>
+
+            <div class="cards-grid">
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Traffic HTTP (24 Jam)</h3>
+                        <span style="font-size:12px;color:var(--text-muted)">Request per jam</span>
+                    </div>
+                    <div class="card-body"><canvas id="trafficChart" height="200"></canvas></div>
+                </div>
+                <div class="card">
+                    <div class="card-header">
+                        <h3>Penggunaan Resource</h3>
+                        <span style="font-size:12px;color:var(--text-muted)">CPU & RAM realtime</span>
+                    </div>
+                    <div class="card-body"><canvas id="resourceChart" height="200"></canvas></div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3>Website Aktif</h3>
+                    <button class="btn btn-primary btn-sm" onclick="navigateTo('websites')">
+                        <i class="fas fa-plus"></i> Tambah Website
+                    </button>
+                </div>
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Domain</th><th>Path</th><th>SSL</th><th>Status</th><th>Traffic</th></tr>
+                        </thead>
+                        <tbody id="dash-sites-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== WEBSITES ====== -->
+        <div class="page" id="page-websites">
+            <h2 class="page-title">Websites</h2>
+            <p class="page-desc">Kelola semua virtual host di OpenLiteSpeed.</p>
+            <div class="toolbar">
+                <div style="display:flex;gap:8px;align-items:center">
+                    <div class="header-search" style="margin:0">
+                        <i class="fas fa-search"></i>
+                        <input type="text" placeholder="Cari domain..." id="site-search" oninput="renderWebsites()">
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <button class="btn btn-primary" onclick="openModal('modal-add-site')">
+                        <i class="fas fa-plus"></i> Tambah Website
+                    </button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Domain</th><th>Document Root</th><th>PHP</th><th>SSL</th><th>Status</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="sites-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== DATABASES ====== -->
+        <div class="page" id="page-databases">
+            <h2 class="page-title">Databases</h2>
+            <p class="page-desc">Kelola database MySQL/MariaDB.</p>
+            <div class="toolbar">
+                <div></div>
+                <div class="toolbar-right">
+                    <button class="btn btn-secondary" onclick="showToast('phpMyAdmin dibuka di tab baru','success')">
+                        <i class="fas fa-external-link-alt"></i> phpMyAdmin
+                    </button>
+                    <button class="btn btn-primary" onclick="openModal('modal-add-db')">
+                        <i class="fas fa-plus"></i> Buat Database
+                    </button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Nama Database</th><th>User</th><th>Ukuran</th><th>Collation</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="db-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== FILE MANAGER ====== -->
+        <div class="page" id="page-filemanager">
+            <h2 class="page-title">File Manager</h2>
+            <p class="page-desc">Kelola file dan direktori di server.</p>
+            <div class="toolbar">
+                <div class="file-breadcrumb" id="file-breadcrumb"></div>
+                <div class="toolbar-right">
+                    <button class="btn btn-secondary btn-sm" onclick="createFolder()">
+                        <i class="fas fa-folder-plus"></i> Folder Baru
+                    </button>
+                    <button class="btn btn-primary btn-sm" onclick="showToast('Upload dialog dibuka','success')">
+                        <i class="fas fa-upload"></i> Upload
+                    </button>
+                </div>
+            </div>
+            <div class="card">
+                <div style="padding:8px 16px;border-bottom:1px solid var(--border);display:flex;gap:24px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--text-muted)">
+                    <span style="flex:1">Nama</span>
+                    <span style="width:80px;text-align:right">Ukuran</span>
+                    <span style="width:90px;text-align:center">Permission</span>
+                    <span style="width:130px;text-align:right">Tanggal</span>
+                    <span style="width:80px"></span>
+                </div>
+                <div id="file-list" style="padding:4px 0;max-height:500px;overflow-y:auto"></div>
+            </div>
+        </div>
+
+        <!-- ====== SSL ====== -->
+        <div class="page" id="page-ssl">
+            <h2 class="page-title">SSL Certificates</h2>
+            <p class="page-desc">Kelola sertifikat SSL untuk website kamu.</p>
+            <div class="toolbar">
+                <div></div>
+                <div class="toolbar-right">
+                    <button class="btn btn-primary" onclick="openModal('modal-issue-ssl')">
+                        <i class="fas fa-plus"></i> Issue Sertifikat Baru
+                    </button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Domain</th><th>Issuer</th><th>Expired</th><th>Status</th><th>Auto Renew</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="ssl-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== FIREWALL ====== -->
+        <div class="page" id="page-firewall">
+            <h2 class="page-title">Firewall</h2>
+            <p class="page-desc">Konfigurasi aturan firewall UFW.</p>
+            <div class="toolbar">
+                <div></div>
+                <div class="toolbar-right">
+                    <button class="btn btn-primary" onclick="openModal('modal-add-rule')">
+                        <i class="fas fa-plus"></i> Tambah Aturan
+                    </button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="table-wrap">
+                    <table>
+                        <thead>
+                            <tr><th>Aksi</th><th>Dari</th><th>Port/Protokol</th><th>Status</th><th>Aksi</th></tr>
+                        </thead>
+                        <tbody id="fw-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== TERMINAL ====== -->
+        <div class="page" id="page-terminal">
+            <h2 class="page-title">Terminal</h2>
+            <p class="page-desc">Akses command line server langsung dari browser.</p>
+            <div class="terminal-wrap">
+                <div class="terminal-bar">
+                    <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
+                    <span class="title">root@mrpanel: ~</span>
+                </div>
+                <div class="terminal-output" id="terminal-output"></div>
+                <div class="terminal-input-line">
+                    <span class="prompt-text">root@mrpanel:~$</span>
+                    <input type="text" id="terminal-input" autofocus autocomplete="off" spellcheck="false">
+                </div>
+            </div>
+        </div>
+
+        <!-- ====== LOGS ====== -->
+        <div class="page" id="page-logs">
+            <h2 class="page-title">Log Viewer</h2>
+            <p class="page-desc">Pantau log server untuk debugging dan monitoring.</p>
+            <div class="log-tabs">
+                <div class="log-tab active" data-log="access" onclick="switchLog(this)">Access Log</div>
+                <div class="log-tab" data-log="error" onclick="switchLog(this)">Error Log</div>
+                <div class="log-tab" data-log="ols" onclick="switchLog(this)">OpenLiteSpeed</div>
+            </div>
+            <div class="log-viewer" id="log-viewer"></div>
+            <div style="margin-top:12px;display:flex;gap:8px">
+                <button class="btn btn-secondary btn-sm" onclick="clearLog()"><i class="fas fa-eraser"></i> Clear</button>
+                <button class="btn btn-secondary btn-sm" onclick="refreshLog()"><i class="fas fa-rotate-right"></i> Refresh</button>
+                <button class="btn btn-secondary btn-sm" onclick="downloadLog()"><i class="fas fa-download"></i> Download</button>
+                <label style="margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--text-muted);cursor:pointer">
+                    <input type="checkbox" id="auto-scroll" checked> Auto-scroll
+                </label>
+            </div>
+        </div>
+
+        <!-- ====== SETTINGS ====== -->
+        <div class="page" id="page-settings">
+            <h2 class="page-title">Settings</h2>
+            <p class="page-desc">Konfigurasi server dan panel.</p>
+
+            <div class="settings-section">
+                <div class="settings-section-header"><h3>Informasi Server</h3></div>
+                <div class="settings-section-body">
+                    <div class="form-row">
+                        <div class="form-group"><label>Hostname</label><input class="form-control" value="mrpanel.local" readonly></div>
+                        <div class="form-group"><label>OS</label><input class="form-control" value="Ubuntu 22.04.3 LTS" readonly></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>IP Address</label><input class="form-control" value="192.168.1.100" readonly></div>
+                        <div class="form-group"><label>Kernel</label><input class="form-control" value="5.15.0-91-generic" readonly></div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group"><label>Web Server</label><input class="form-control" value="OpenLiteSpeed 1.7.18" readonly></div>
+                        <div class="form-group"><label>Uptime</label><input class="form-control" value="3 hari, 14 jam, 22 menit" readonly></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-header"><h3>Pengaturan PHP</h3></div>
+                <div class="settings-section-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Versi PHP</label>
+                            <select class="form-control" id="php-version">
+                                <option value="8.3" selected>PHP 8.3</option>
+                                <option value="8.2">PHP 8.2</option>
+                                <option value="8.1">PHP 8.1</option>
+                                <option value="7.4">PHP 7.4</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Memory Limit</label>
+                            <select class="form-control">
+                                <option>128 MB</option>
+                                <option selected>256 MB</option>
+                                <option>512 MB</option>
+                                <option>1 GB</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Max Execution Time</label>
+                            <input class="form-control" type="number" value="30">
+                        </div>
+                        <div class="form-group">
+                            <label>Upload Max Filesize</label>
+                            <input class="form-control" type="text" value="64M">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Post Max Size</label>
+                            <input class="form-control" type="text" value="64M">
+                        </div>
+                        <div class="form-group">
+                            <label>OPcache</label>
+                            <div style="padding-top:6px">
+                                <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top:8px">
+                        <button class="btn btn-primary" onclick="showToast('Konfigurasi PHP berhasil disimpan','success')">
+                            <i class="fas fa-save"></i> Simpan Pengaturan PHP
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-header"><h3>OpenLiteSpeed</h3></div>
+                <div class="settings-section-body">
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-name">Gzip Compression</div>
+                            <div class="setting-desc">Aktifkan kompresi gzip untuk respons HTTP</div>
+                        </div>
+                        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-name">HTTP/2</div>
+                            <div class="setting-desc">Gunakan protokol HTTP/2 untuk performa lebih baik</div>
+                        </div>
+                        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-name">Brotli Compression</div>
+                            <div class="setting-desc">Aktifkan kompresi brotli (lebih efisien dari gzip)</div>
+                        </div>
+                        <div class="toggle-switch" onclick="this.classList.toggle('on')"></div>
+                    </div>
+                    <div class="setting-row">
+                        <div class="setting-info">
+                            <div class="setting-name">Cache Static Files</div>
+                            <div class="setting-desc">Cache file statis (CSS, JS, gambar) di memori</div>
+                        </div>
+                        <div class="toggle-switch on" onclick="this.classList.toggle('on')"></div>
+                    </div>
+                    <div style="margin-top:8px">
+                        <button class="btn btn-secondary" onclick="showToast('OpenLiteSpeed di-restart gracefully','success')">
+                            <i class="fas fa-rotate-right"></i> Graceful Restart
+                        </button>
+                        <button class="btn btn-danger" style="margin-left:8px" onclick="showToast('OpenLiteSpeed di-restart full','warning')">
+                            <i class="fas fa-power-off"></i> Full Restart
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ====== MODALS ====== -->
+
+<!-- Tambah Website -->
+<div class="modal-overlay" id="modal-add-site">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Tambah Website</h2>
+            <button class="modal-close" onclick="closeModal('modal-add-site')"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Domain Name</label>
+                <input class="form-control" id="new-domain" placeholder="contoh.com">
+                <div class="form-hint">Tanpa http:// atau www</div>
+            </div>
+            <div class="form-group">
+                <label>Document Root</label>
+                <input class="form-control" id="new-docroot" placeholder="/var/www/contoh.com">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Versi PHP</label>
+                    <select class="form-control" id="new-php">
+                        <option>PHP 8.3</option><option>PHP 8.2</option><option>PHP 8.1</option><option>PHP 7.4</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>SSL</label>
+                    <select class="form-control" id="new-ssl">
+                        <option value="1">Aktifkan Let's Encrypt</option><option value="0">Tanpa SSL</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-add-site')">Batal</button>
+            <button class="btn btn-primary" onclick="addWebsite()"><i class="fas fa-plus"></i> Buat Website</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tambah Database -->
+<div class="modal-overlay" id="modal-add-db">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Buat Database</h2>
+            <button class="modal-close" onclick="closeModal('modal-add-db')"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Nama Database</label>
+                <input class="form-control" id="new-dbname" placeholder="db_contoh">
+                <div class="form-hint">Prefix "db_" akan otomatis ditambahkan</div>
+            </div>
+            <div class="form-group">
+                <label>Username</label>
+                <input class="form-control" id="new-dbuser" placeholder="user_contoh">
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Password</label>
+                    <input class="form-control" type="password" id="new-dbpass" placeholder="Password kuat">
+                </div>
+                <div class="form-group">
+                    <label>Konfirmasi Password</label>
+                    <input class="form-control" type="password" id="new-dbpass2" placeholder="Ulangi password">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Privileges</label>
+                <div style="display:flex;flex-wrap:wrap;gap:12px;margin-top:6px">
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);cursor:pointer">
+                        <input type="checkbox" checked> ALL PRIVILEGES
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);cursor:pointer">
+                        <input type="checkbox"> SELECT
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);cursor:pointer">
+                        <input type="checkbox"> INSERT
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);cursor:pointer">
+                        <input type="checkbox"> UPDATE
+                    </label>
+                    <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--text-dim);cursor:pointer">
+                        <input type="checkbox"> DELETE
+                    </label>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-add-db')">Batal</button>
+            <button class="btn btn-primary" onclick="addDatabase()"><i class="fas fa-plus"></i> Buat Database</button>
+        </div>
+    </div>
+</div>
+
+<!-- Issue SSL -->
+<div class="modal-overlay" id="modal-issue-ssl">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Issue Sertifikat SSL</h2>
+            <button class="modal-close" onclick="closeModal('modal-issue-ssl')"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Domain</label>
+                <select class="form-control" id="ssl-domain"></select>
+            </div>
+            <div class="form-group">
+                <label>Email untuk Notifikasi</label>
+                <input class="form-control" type="email" id="ssl-email" placeholder="admin@contoh.com">
+                <div class="form-hint">Let's Encrypt akan mengirim notifikasi ke email ini</div>
+            </div>
+            <div class="form-group">
+                <label>Auto Renewal</label>
+                <select class="form-control">
+                    <option selected>Ya, perpanjang otomatis sebelum expired</option>
+                    <option>Tidak, perpanjang manual</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-issue-ssl')">Batal</button>
+            <button class="btn btn-primary" onclick="issueSSL()"><i class="fas fa-shield-halved"></i> Issue SSL</button>
+        </div>
+    </div>
+</div>
+
+<!-- Tambah Firewall Rule -->
+<div class="modal-overlay" id="modal-add-rule">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>Tambah Aturan Firewall</h2>
+            <button class="modal-close" onclick="closeModal('modal-add-rule')"><i class="fas fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label>Aksi</label>
+                <select class="form-control" id="fw-action">
+                    <option value="ALLOW">ALLOW (Izinkan)</option>
+                    <option value="DENY">DENY (Tolak)</option>
+                </select>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Port</label>
+                    <input class="form-control" id="fw-port" placeholder="80, 443">
+                </div>
+                <div class="form-group">
+                    <label>Protokol</label>
+                    <select class="form-control" id="fw-proto">
+                        <option value="tcp">TCP</option><option value="udp">UDP</option><option value="both">TCP + UDP</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Dari IP (kosongkan untuk all)</label>
+                <input class="form-control" id="fw-from" placeholder="192.168.1.0/24">
+            </div>
+            <div class="form-group">
+                <label>Komentar</label>
+                <input class="form-control" id="fw-comment" placeholder="Deskripsi aturan">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeModal('modal-add-rule')">Batal</button>
+            <button class="btn btn-primary" onclick="addFwRule()"><i class="fas fa-plus"></i> Tambah Aturan</button>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Container -->
+<div class="toast-container" id="toast-container"></div>
+
+<script>
+// ===== DATA STATE =====
+const state = {
+    websites: [
+        { domain: 'mrpanel.local', path: '/var/www/mrpanel/public', php: '8.3', ssl: true, status: 'active', traffic: '1.2 GB' },
+        { domain: 'tokoku.com', path: '/var/www/tokoku/public', php: '8.2', ssl: true, status: 'active', traffic: '845 MB' },
+        { domain: 'blogku.dev', path: '/var/www/blogku', php: '8.1', ssl: false, status: 'inactive', traffic: '120 MB' },
+    ],
+    databases: [
+        { name: 'db_mrpanel', user: 'usr_mrpanel', size: '24.3 MB', collation: 'utf8mb4_unicode_ci' },
+        { name: 'db_tokoku', user: 'usr_tokoku', size: '156.7 MB', collation: 'utf8mb4_unicode_ci' },
+        { name: 'db_blogku', user: 'usr_blogku', size: '8.1 MB', collation: 'utf8mb4_general_ci' },
+    ],
+    sslCerts: [
+        { domain: 'mrpanel.local', issuer: "Let's Encrypt", expired: '2025-08-15', status: 'active', auto: true },
+        { domain: 'tokoku.com', issuer: "Let's Encrypt", expired: '2025-07-22', status: 'active', auto: true },
+    ],
+    fwRules: [
+        { action: 'ALLOW', from: 'Anywhere', port: '22', proto: 'tcp', comment: 'SSH', enabled: true },
+        { action: 'ALLOW', from: 'Anywhere', port: '80', proto: 'tcp', comment: 'HTTP', enabled: true },
+        { action: 'ALLOW', from: 'Anywhere', port: '443', proto: 'tcp', comment: 'HTTPS', enabled: true },
+        { action: 'ALLOW', from: 'Anywhere', port: '7080', proto: 'tcp', comment: 'OLS Admin', enabled: true },
+        { action: 'DENY', from: '45.33.32.156', port: 'All', proto: 'both', comment: 'Spam IP', enabled: true },
+    ],
+    files: {
+        '/var/www': [
+            { name: 'mrpanel', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'tokoku', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2025-01-08 14:22' },
+            { name: 'blogku', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-11-20 09:15' },
+            { name: 'html', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-10-01 08:00' },
+            { name: 'index.html', type: 'file', perm: '-rw-r--r--', size: '1.2 KB', date: '2024-10-01 08:00' },
+        ],
+        '/var/www/mrpanel': [
+            { name: 'app', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'bootstrap', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'config', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'database', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'public', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'resources', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'routes', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'storage', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'vendor', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:32' },
+            { name: '.env', type: 'file', perm: '-rw-r--r--', size: '0.8 KB', date: '2024-12-15 10:31' },
+            { name: 'artisan', type: 'file', perm: '-rwxr-xr-x', size: '2.4 KB', date: '2024-12-15 10:30' },
+            { name: 'composer.json', type: 'file', perm: '-rw-r--r--', size: '1.9 KB', date: '2024-12-15 10:30' },
+            { name: 'composer.lock', type: 'file', perm: '-rw-r--r--', size: '48.2 KB', date: '2024-12-15 10:32' },
+            { name: 'package.json', type: 'file', perm: '-rw-r--r--', size: '1.1 KB', date: '2024-12-15 10:30' },
+            { name: 'README.md', type: 'file', perm: '-rw-r--r--', size: '0.5 KB', date: '2024-12-15 10:30' },
+        ],
+        '/var/www/mrpanel/public': [
+            { name: 'css', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'js', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'images', type: 'folder', perm: 'drwxr-xr-x', size: '-', date: '2024-12-15 10:30' },
+            { name: 'index.php', type: 'file', perm: '-rw-r--r--', size: '0.6 KB', date: '2024-12-15 10:30' },
+            { name: '.htaccess', type: 'file', perm: '-rw-r--r--', size: '0.2 KB', date: '2024-12-15 10:30' },
+            { name: 'favicon.ico', type: 'img', perm: '-rw-r--r--', size: '4.1 KB', date: '2024-12-15 10:30' },
+            { name: 'robots.txt', type: 'file', perm: '-rw-r--r--', size: '0.1 KB', date: '2024-12-15 10:30' },
+        ]
+    },
+    currentPath: '/var/www',
+    currentLog: 'access',
+    cmdHistory: [],
+    cmdIndex: -1
+};
+
+// ===== NAVIGASI =====
+function navigateTo(page) {
+    // Update sidebar
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
+    if (navItem) navItem.classList.add('active');
+
+    // Update halaman
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    const pageEl = document.getElementById(`page-${page}`);
+    if (pageEl) pageEl.classList.add('active');
+
+    // Update breadcrumb
+    const names = {
+        dashboard: 'Dashboard', websites: 'Websites', databases: 'Databases',
+        filemanager: 'File Manager', ssl: 'SSL Certificates', firewall: 'Firewall',
+        terminal: 'Terminal', logs: 'Log Viewer', settings: 'Settings'
+    };
+    document.getElementById('breadcrumb-current').textContent = names[page] || page;
+
+    // Tutup sidebar mobile
+    document.getElementById('sidebar').classList.remove('open');
+
+    // Render halaman spesifik
+    if (page === 'terminal') {
+        setTimeout(() => document.getElementById('terminal-input').focus(), 100);
+    }
+}
+
+document.querySelectorAll('.nav-item').forEach(item => {
+    item.addEventListener('click', () => navigateTo(item.dataset.page));
+});
+
+// ===== MODAL =====
+function openModal(id) {
+    document.getElementById(id).classList.add('show');
+    // Isi dropdown domain SSL
+    if (id === 'modal-issue-ssl') {
+        const sel = document.getElementById('ssl-domain');
+        sel.innerHTML = state.websites.map(w => `<option value="${w.domain}">${w.domain}</option>`).join('');
+    }
+}
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+}
+// Tutup modal klik overlay
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+    overlay.addEventListener('click', (e) => {
+        if (e.target === overlay) overlay.classList.remove('show');
+    });
+});
+
+// ===== TOAST =====
+function showToast(msg, type = 'success') {
+    const container = document.getElementById('toast-container');
+    const icons = { success: 'fa-check-circle', error: 'fa-times-circle', warning: 'fa-exclamation-triangle' };
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerHTML = `
+        <i class="fas ${icons[type]} toast-icon"></i>
+        <span class="toast-msg">${msg}</span>
+        <button class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-xmark"></i></button>
+    `;
+    container.appendChild(toast);
+    setTimeout(() => { if (toast.parentElement) toast.remove(); }, 4000);
+}
+
+// ===== WEBSITES =====
+function renderWebsites() {
+    const search = (document.getElementById('site-search')?.value || '').toLowerCase();
+    const filtered = state.websites.filter(w => w.domain.toLowerCase().includes(search));
+
+    const tbody = document.getElementById('sites-tbody');
+    tbody.innerHTML = filtered.map(w => `
+        <tr>
+            <td style="font-weight:600">${w.domain}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim)">${w.path}</td>
+            <td><span style="font-family:'JetBrains Mono',monospace;font-size:12px">${w.php}</span></td>
+            <td>${w.ssl
+                ? '<span class="status-badge active"><span class="dot"></span>HTTPS</span>'
+                : '<span class="status-badge inactive"><span class="dot"></span>HTTP</span>'
+            }</td>
+            <td>${w.status === 'active'
+                ? '<span class="status-badge active"><span class="dot"></span>Aktif</span>'
+                : '<span class="status-badge inactive"><span class="dot"></span>Nonaktif</span>'
+            }</td>
+            <td>
+                <div style="display:flex;gap:4px">
+                    <button class="btn-icon" title="SSL" onclick="showToast('SSL ${w.ssl ? 'di-nonaktifkan' : 'diaktifkan'}','success')"><i class="fas fa-shield-halved"></i></button>
+                    <button class="btn-icon" title="${w.status === 'active' ? 'Stop' : 'Start'}" onclick="toggleSiteStatus('${w.domain}')"><i class="fas fa-${w.status === 'active' ? 'stop' : 'play'}"></i></button>
+                    <button class="btn-icon danger" title="Hapus" onclick="deleteWebsite('${w.domain}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+
+    // Dashboard sites table
+    const dashTbody = document.getElementById('dash-sites-tbody');
+    dashTbody.innerHTML = state.websites.map(w => `
+        <tr>
+            <td style="font-weight:600">${w.domain}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim)">${w.path}</td>
+            <td>${w.ssl
+                ? '<span class="status-badge active"><span class="dot"></span>HTTPS</span>'
+                : '<span class="status-badge inactive"><span class="dot"></span>HTTP</span>'
+            }</td>
+            <td>${w.status === 'active'
+                ? '<span class="status-badge active"><span class="dot"></span>Aktif</span>'
+                : '<span class="status-badge inactive"><span class="dot"></span>Nonaktif</span>'
+            }</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${w.traffic}</td>
+        </tr>
+    `).join('');
+}
+
+function addWebsite() {
+    const domain = document.getElementById('new-domain').value.trim();
+    const path = document.getElementById('new-docroot').value.trim();
+    if (!domain) { showToast('Domain tidak boleh kosong', 'error'); return; }
+    if (!path) { showToast('Document root tidak boleh kosong', 'error'); return; }
+    if (state.websites.find(w => w.domain === domain)) { showToast('Domain sudah ada', 'error'); return; }
+
+    state.websites.push({
+        domain, path, php: document.getElementById('new-php').value,
+        ssl: document.getElementById('new-ssl').value === '1',
+        status: 'active', traffic: '0 MB'
+    });
+
+    // Tambah ke file manager juga
+    const folderName = path.split('/').pop();
+    state.files['/var/www']?.unshift({
+        name: folderName, type: 'folder', perm: 'drwxr-xr-x', size: '-', date: new Date().toISOString().slice(0,16).replace('T',' ')
+    });
+
+    renderWebsites();
+    closeModal('modal-add-site');
+    document.getElementById('new-domain').value = '';
+    document.getElementById('new-docroot').value = '';
+    // Update badge
+    document.querySelector('.nav-item[data-page="websites"] .badge').textContent = state.websites.length;
+    showToast(`Website ${domain} berhasil dibuat`, 'success');
+}
+
+function toggleSiteStatus(domain) {
+    const site = state.websites.find(w => w.domain === domain);
+    if (site) {
+        site.status = site.status === 'active' ? 'inactive' : 'active';
+        renderWebsites();
+        showToast(`${domain} ${site.status === 'active' ? 'diaktifkan' : 'dinonaktifkan'}`, 'success');
+    }
+}
+
+function deleteWebsite(domain) {
+    state.websites = state.websites.filter(w => w.domain !== domain);
+    renderWebsites();
+    document.querySelector('.nav-item[data-page="websites"] .badge').textContent = state.websites.length;
+    showToast(`Website ${domain} dihapus`, 'warning');
+}
+
+// ===== DATABASES =====
+function renderDatabases() {
+    document.getElementById('db-tbody').innerHTML = state.databases.map(db => `
+        <tr>
+            <td style="font-weight:600;font-family:'JetBrains Mono',monospace;font-size:13px">${db.name}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--text-dim)">${db.user}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${db.size}</td>
+            <td style="font-size:12px;color:var(--text-muted)">${db.collation}</td>
+            <td>
+                <div style="display:flex;gap:4px">
+                    <button class="btn-icon" title="phpMyAdmin" onclick="showToast('phpMyAdmin dibuka','success')"><i class="fas fa-external-link-alt"></i></button>
+                    <button class="btn-icon" title="Backup" onclick="showToast('Backup ${db.name} dimulai','success')"><i class="fas fa-download"></i></button>
+                    <button class="btn-icon danger" title="Hapus" onclick="deleteDb('${db.name}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function addDatabase() {
+    const name = document.getElementById('new-dbname').value.trim();
+    const user = document.getElementById('new-dbuser').value.trim();
+    const pass = document.getElementById('new-dbpass').value;
+    const pass2 = document.getElementById('new-dbpass2').value;
+
+    if (!name) { showToast('Nama database kosong', 'error'); return; }
+    if (!user) { showToast('Username kosong', 'error'); return; }
+    if (pass.length < 6) { showToast('Password minimal 6 karakter', 'error'); return; }
+    if (pass !== pass2) { showToast('Password tidak cocok', 'error'); return; }
+
+    state.databases.push({
+        name: `db_${name}`, user: `usr_${user}`, size: '0.0 MB', collation: 'utf8mb4_unicode_ci'
+    });
+
+    renderDatabases();
+    closeModal('modal-add-db');
+    document.getElementById('new-dbname').value = '';
+    document.getElementById('new-dbuser').value = '';
+    document.getElementById('new-dbpass').value = '';
+    document.getElementById('new-dbpass2').value = '';
+    showToast(`Database db_${name} berhasil dibuat`, 'success');
+}
+
+function deleteDb(name) {
+    state.databases = state.databases.filter(d => d.name !== name);
+    renderDatabases();
+    showToast(`Database ${name} dihapus`, 'warning');
+}
+
+// ===== FILE MANAGER =====
+function renderFiles() {
+    const files = state.files[state.currentPath] || [];
+    const breadcrumb = document.getElementById('file-breadcrumb');
+    const parts = state.currentPath.split('/').filter(Boolean);
+    let html = '<span onclick="goToPath(\'/\')">/</span>';
+    let builtPath = '';
+    parts.forEach((part, i) => {
+        builtPath += '/' + part;
+        const isLast = i === parts.length - 1;
+        html += `<span class="sep">/</span>`;
+        html += isLast
+            ? `<span class="current">${part}</span>`
+            : `<span onclick="goToPath('${builtPath}')">${part}</span>`;
+    });
+    breadcrumb.innerHTML = html;
+
+    const list = document.getElementById('file-list');
+    // Urutkan: folder dulu, lalu file
+    const sorted = [...files].sort((a, b) => {
+        if (a.type === 'folder' && b.type !== 'folder') return -1;
+        if (a.type !== 'folder' && b.type === 'folder') return 1;
+        return a.name.localeCompare(b.name);
+    });
+
+    list.innerHTML = sorted.map(f => {
+        let iconClass = 'file';
+        if (f.type === 'folder') iconClass = 'folder';
+        else if (f.type === 'img') iconClass = 'img';
+        else if (f.name.endsWith('.zip') || f.name.endsWith('.tar.gz')) iconClass = 'archive';
+
+        let icon = 'fa-file';
+        if (f.type === 'folder') icon = 'fa-folder';
+        else if (f.type === 'img') icon = 'fa-file-image';
+        else if (f.name.endsWith('.json') || f.name.endsWith('.lock')) icon = 'fa-file-code';
+        else if (f.name.endsWith('.md')) icon = 'fa-file-lines';
+        else if (f.name.endsWith('.env')) icon = 'fa-key';
+        else if (f.name.endsWith('.php')) icon = 'fa-file-code';
+        else if (f.name.endsWith('.css')) icon = 'fa-file-code';
+        else if (f.name.endsWith('.txt')) icon = 'fa-file-lines';
+        else if (f.name.endsWith('.ico')) icon = 'fa-file-image';
+
+        return `
+            <div class="file-item" ondblclick="${f.type === 'folder' ? `goToPath('${state.currentPath}/${f.name}')` : `showToast('Membuka file: ${f.name}','success')`}">
+                <div class="fi-icon ${iconClass}"><i class="fas ${icon}"></i></div>
+                <div class="fi-name">${f.name}</div>
+                <div class="fi-size">${f.size}</div>
+                <div class="fi-perm">${f.perm}</div>
+                <div class="fi-date">${f.date}</div>
+                <div class="fi-actions">
+                    <button class="btn-icon" title="Edit" onclick="showToast('Edit ${f.name}','success')"><i class="fas fa-pen"></i></button>
+                    <button class="btn-icon" title="Chmod" onclick="showToast('Chmod ${f.name}','success')"><i class="fas fa-lock"></i></button>
+                    <button class="btn-icon danger" title="Hapus" onclick="deleteFile('${f.name}')"><i class="fas fa-trash"></i></button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function goToPath(path) {
+    if (path === '/') path = '/var/www';
+    if (state.files[path]) {
+        state.currentPath = path;
+        renderFiles();
+    } else {
+        showToast('Direktori tidak ditemukan', 'error');
+    }
+}
+
+function createFolder() {
+    const name = 'new_folder_' + Date.now().toString(36);
+    if (state.files[state.currentPath]) {
+        state.files[state.currentPath].unshift({
+            name, type: 'folder', perm: 'drwxr-xr-x', size: '-', date: new Date().toISOString().slice(0,16).replace('T',' ')
+        });
+        renderFiles();
+        showToast(`Folder ${name} dibuat`, 'success');
+    }
+}
+
+function deleteFile(name) {
+    if (state.files[state.currentPath]) {
+        state.files[state.currentPath] = state.files[state.currentPath].filter(f => f.name !== name);
+        renderFiles();
+        showToast(`${name} dihapus`, 'warning');
+    }
+}
+
+// ===== SSL =====
+function renderSSL() {
+    document.getElementById('ssl-tbody').innerHTML = state.sslCerts.map(c => {
+        const expDate = new Date(c.expired);
+        const now = new Date();
+        const daysLeft = Math.floor((expDate - now) / (1000*60*60*24));
+        let statusClass = 'active', statusText = 'Valid';
+        if (daysLeft < 30) { statusClass = 'warning'; statusText = `${daysLeft} hari lagi`; }
+        if (daysLeft < 0) { statusClass = 'error'; statusText = 'Expired'; }
+
+        return `
+            <tr>
+                <td style="font-weight:600">${c.domain}</td>
+                <td style="font-size:12px;color:var(--text-dim)">${c.issuer}</td>
+                <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${c.expired}</td>
+                <td><span class="status-badge ${statusClass}"><span class="dot"></span>${statusText}</span></td>
+                <td>${c.auto ? '<span class="status-badge active"><span class="dot"></span>Ya</span>' : '<span class="status-badge inactive"><span class="dot"></span>Tidak</span>'}</td>
+                <td>
+                    <div style="display:flex;gap:4px">
+                        <button class="btn-icon" title="Renew" onclick="showToast('SSL ${c.domain} di-renew','success')"><i class="fas fa-rotate-right"></i></button>
+                        <button class="btn-icon danger" title="Hapus" onclick="deleteSSL('${c.domain}')"><i class="fas fa-trash"></i></button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function issueSSL() {
+    const domain = document.getElementById('ssl-domain').value;
+    const email = document.getElementById('ssl-email').value.trim();
+    if (!email) { showToast('Email wajib diisi', 'error'); return; }
+
+    if (!state.sslCerts.find(c => c.domain === domain)) {
+        const exp = new Date();
+        exp.setMonth(exp.getMonth() + 3);
+        state.sslCerts.push({
+            domain, issuer: "Let's Encrypt",
+            expired: exp.toISOString().slice(0,10),
+            status: 'active', auto: true
+        });
+    }
+    renderSSL();
+    closeModal('modal-issue-ssl');
+    showToast(`SSL untuk ${domain} berhasil di-issue`, 'success');
+}
+
+function deleteSSL(domain) {
+    state.sslCerts = state.sslCerts.filter(c => c.domain !== domain);
+    renderSSL();
+    showToast(`SSL ${domain} dihapus`, 'warning');
+}
+
+// ===== FIREWALL =====
+function renderFirewall() {
+    document.getElementById('fw-tbody').innerHTML = state.fwRules.map((r, i) => `
+        <tr>
+            <td><span class="status-badge ${r.action === 'ALLOW' ? 'active' : 'error'}">${r.action}</span></td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${r.from}</td>
+            <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${r.port} / ${r.proto.toUpperCase()}</td>
+            <td><span class="status-badge ${r.enabled ? 'active' : 'inactive'}"><span class="dot"></span>${r.enabled ? 'Aktif' : 'Nonaktif'}</span></td>
+            <td>
+                <div style="display:flex;gap:4px">
+                    <button class="btn-icon" title="Toggle" onclick="toggleFwRule(${i})"><i class="fas fa-${r.enabled ? 'pause' : 'play'}"></i></button>
+                    <button class="btn-icon danger" title="Hapus" onclick="deleteFwRule(${i})"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>
+        </tr>
+    `).join('');
+}
+
+function addFwRule() {
+    const port = document.getElementById('fw-port').value.trim();
+    if (!port) { showToast('Port wajib diisi', 'error'); return; }
+    state.fwRules.push({
+        action: document.getElementById('fw-action').value,
+        from: document.getElementById('fw-from').value.trim() || 'Anywhere',
+        port, proto: document.getElementById('fw-proto').value,
+        comment: document.getElementById('fw-comment').value.trim() || '-',
+        enabled: true
+    });
+    renderFirewall();
+    closeModal('modal-add-rule');
+    document.getElementById('fw-port').value = '';
+    document.getElementById('fw-from').value = '';
+    document.getElementById('fw-comment').value = '';
+    showToast('Aturan firewall ditambahkan', 'success');
+}
+
+function toggleFwRule(i) {
+    state.fwRules[i].enabled = !state.fwRules[i].enabled;
+    renderFirewall();
+}
+
+function deleteFwRule(i) {
+    state.fwRules.splice(i, 1);
+    renderFirewall();
+    showToast('Aturan firewall dihapus', 'warning');
+}
+
+// ===== TERMINAL =====
+const terminalCmds = {
+    'ls': () => state.files[state.currentPath]?.map(f => f.name).join('  ') || 'ls: tidak bisa akses',
+    'pwd': () => state.currentPath,
+    'whoami': () => 'root',
+    'hostname': () => 'mrpanel',
+    'date': () => new Date().toString(),
+    'uptime': () => ' 14:22:31 up 3 days, 14:22,  1 user,  load average: 0.23, 0.18, 0.15',
+    'free -h': () => '               total        used        free      shared  buff/cache   available\nMem:           4.0Gi       1.2Gi       1.8Gi        16Mi       1.0Gi       2.6Gi\nSwap:          2.0Gi          0B       2.0Gi',
+    'df -h': () => 'Filesystem      Size  Used Avail Use% Mounted on\n/dev/sda1        50G   19G   29G  40% /\ntmpfs           2.0G     0  2.0G   0% /dev/shm',
+    'top': () => 'top - 14:22:31 up 3 days, 14:22,  1 user,  load average: 0.23, 0.18, 0.15\nTasks:  87 total,   1 running,  86 sleeping,   0 stopped,   0 zombie\n%Cpu(s):  3.2 us,  1.1 sy,  0.0 ni, 95.5 id,  0.2 wa\nMiB Mem :   4096.0 total,   1843.2 free,   1228.8 used,   1024.0 buff/cache\n\n  PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND\n 1234 lsphp     20   0  284532  45632  12340 S   2.3   1.1   0:42.18 lsphp\n 1156 mysql     20   0  1245680 128432  12456 S   1.2   3.1   1:23.45 mysqld\n 1089 litespeed 20   0   45632  12340   4560 S   0.5   0.3   0:15.32 litespeed',
+    'systemctl status litespeed': () => '● litespeed.service - OpenLiteSpeed HTTP Server\n     Loaded: loaded (/lib/systemd/system/litespeed.service; enabled)\n     Active: active (running) since Mon 2025-01-06 00:00:00 UTC; 3 days ago\n    Process: 1089 ExecStart=/usr/local/lsws/bin/lswsctrl start (code=exited, status=0/SUCCESS)\   Main PID: 1089 (litespeed)\n        Tasks: 12 (limit: 4915)\       Memory: 12.3M\n          CPU: 15.320s\n     CGroup: /system.slice/litespeed.service\n             └─1089 litespeed',
+    'php -v': () => 'PHP 8.3.15 (cli) (built: Dec 15 2024 10:30:00) (NTS)\nCopyright (c) The PHP Group\nZend Engine v4.3.15, Copyright (c) Zend Technologies\n    with Zend OPcache v8.3.15, Copyright (c), by Zend Technologies',
+    'clear': () => '__CLEAR__',
+    'help': () => 'Perintah tersedia:\n  ls          - Daftar file\n  pwd         - Direktori saat ini\n  cd <dir>    - Pindah direktori\n  whoami      - User saat ini\n  hostname    - Nama host\n  date        - Tanggal & waktu\n  uptime      - Uptime server\n  free -h     - Penggunaan memori\n  df -h       - Penggunaan disk\n  top         - Proses berjalan\n  php -v      - Versi PHP\n  systemctl status litespeed - Status OLS\n  clear       - Bersihkan layar\n  help        - Daftar perintah',
+};
+
+const termOutput = document.getElementById('terminal-output');
+const termInput = document.getElementById('terminal-input');
+
+function termPrint(html) {
+    const line = document.createElement('div');
+    line.className = 'line';
+    line.innerHTML = html;
+    termOutput.appendChild(line);
+}
+
+termPrint('<span class="out">Selamat datang di MRPanel Terminal v1.0</span>');
+termPrint('<span class="out">Ketik <span style="color:var(--accent)">help</span> untuk daftar perintah.</span>');
+termPrint('');
+
+termInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+        const cmd = termInput.value.trim();
+        if (!cmd) return;
+
+        state.cmdHistory.push(cmd);
+        state.cmdIndex = state.cmdHistory.length;
+
+        termPrint(`<span class="prompt">root@mrpanel:${state.currentPath}$</span> <span class="cmd">${cmd}</span>`);
+
+        // Handle cd
+        if (cmd.startsWith('cd ')) {
+            const target = cmd.slice(3).trim();
+            let newPath;
+            if (target === '..') {
+                const parts = state.currentPath.split('/').filter(Boolean);
+                parts.pop();
+                newPath = '/' + parts.join('/') || '/var/www';
+            } else if (target.startsWith('/')) {
+                newPath = target;
+            } else {
+                newPath = state.currentPath + '/' + target;
+            }
+            if (state.files[newPath]) {
+                state.currentPath = newPath;
+                termInput.parentElement.querySelector('.prompt-text').textContent = `root@mrpanel:${newPath}$`;
+            } else {
+                termPrint(`<span class="err">bash: cd: ${target}: Tidak ada file atau direktori</span>`);
+            }
+        } else if (terminalCmds[cmd]) {
+            const result = terminalCmds[cmd]();
+            if (result === '__CLEAR__') {
+                termOutput.innerHTML = '';
+            } else {
+                termPrint(`<span class="out">${result.replace(/\n/g, '<br>')}</span>`);
+            }
+        } else {
+            termPrint(`<span class="err">bash: ${cmd}: perintah tidak ditemukan</span>`);
+        }
+
+        termInput.value = '';
+        if (document.getElementById('auto-scroll')?.checked !== false) {
+            termOutput.scrollTop = termOutput.scrollHeight;
+        }
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (state.cmdIndex > 0) {
+            state.cmdIndex--;
+            termInput.value = state.cmdHistory[state.cmdIndex];
+        }
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (state.cmdIndex < state.cmdHistory.length - 1) {
+            state.cmdIndex++;
+            termInput.value = state.cmdHistory[state.cmdIndex];
+        } else {
+            state.cmdIndex = state.cmdHistory.length;
+            termInput.value = '';
+        }
+    }
+});
+
+// ===== LOGS =====
+const logData = {
+    access: [
+        { ts: '15:42:31', ip: '192.168.1.10', method: 'GET', url: '/', status: 200, size: '2.4K', time: '12ms' },
+        { ts: '15:42:30', ip: '192.168.1.10', method: 'GET', url: '/css/app.css', status: 200, size: '45.2K', time: '3ms' },
+        { ts: '15:42:29', ip: '192.168.1.10', method: 'GET', url: '/js/app.js', status: 200, size: '128.4K', time: '5ms' },
+        { ts: '15:42:28', ip: '10.0.0.55', method: 'GET', url: '/api/dashboard', status: 200, size: '1.8K', time: '45ms' },
+        { ts: '15:42:25', ip: '10.0.0.55', method: 'POST', url: '/api/login', status: 200, size: '0.3K', time: '230ms' },
+        { ts: '15:42:20', ip: '192.168.1.22', method: 'GET', url: '/favicon.ico', status: 404, size: '0.2K', time: '2ms' },
+        { ts: '15:42:18', ip: '192.168.1.10', method: 'GET', url: '/images/logo.png', status: 200, size: '8.1K', time: '4ms' },
+        { ts: '15:42:15', ip: '172.16.0.100', method: 'GET', url: '/robots.txt', status: 200, size: '0.1K', time: '1ms' },
+        { ts: '15:42:10', ip: '172.16.0.100', method: 'GET', url: '/', status: 301, size: '0.2K', time: '8ms' },
+        { ts: '15:42:05', ip: '192.168.1.10', method: 'GET', url: '/api/websites', status: 200, size: '3.2K', time: '18ms' },
+    ],
+    error: [
+        { ts: '15:40:12', lvl: 'ERR', msg: '[client 192.168.1.22] File not found: /var/www/mrpanel/public/favicon.ico' },
+        { ts: '15:38:45', lvl: 'WARN', msg: '[module:rewrite] URL rewrite failed: /old-page -> not found' },
+        { ts: '15:35:20', lvl: 'ERR', msg: '[client 10.0.0.55] PHP Fatal error: Allowed memory size of 134217728 bytes exhausted in /var/www/mrpanel/app/Services/ReportService.php:142' },
+        { ts: '15:30:10', lvl: 'WARN', msg: '[ssl] Certificate for blogku.dev will expire in 15 days' },
+        { ts: '15:25:00', lvl: 'ERR', msg: '[client 45.33.32.156] Access denied by firewall rule #5' },
+        { ts: '15:20:15', lvl: 'WARN', msg: '[module:cache] Cache storage almost full: 92% used' },
+    ],
+    ols: [
+        { ts: '15:42:31', lvl: 'INFO', msg: '[STDERR] PHP 8.3.15: Handling request GET / from 192.168.1.10' },
+        { ts: '15:42:30', lvl: 'INFO', msg: '[LSCORE] Connection accepted from 192.168.1.10:54321 on fd 14' },
+        { ts: '15:42:28', lvl: 'INFO', msg: '[LSCORE] HTTP/1.1 200 OK, GET /api/dashboard, 45ms' },
+        { ts: '15:42:25', lvl: 'INFO', msg: '[LSCORE] HTTP/1.1 200 OK, POST /api/login, 230ms' },
+        { ts: '15:42:20', lvl: 'WARN', msg: '[LSCORE] 404 Not Found: /favicon.ico, referrer: -' },
+        { ts: '15:41:00', lvl: 'INFO', msg: '[LSCORE] Worker process restarted (PID 2345)' },
+        { ts: '15:40:00', lvl: 'INFO', msg: '[LSCORE] Server statistics: 1,234 requests, 45.6 MB served in last 60s' },
+        { ts: '15:38:00', lvl: 'INFO', msg: '[LSCORE] Memory usage: 12.3 MB, max connections: 1000, active: 23' },
+    ]
+};
+
+function renderLog() {
+    const viewer = document.getElementById('log-viewer');
+    const logs = logData[state.currentLog] || [];
+
+    if (state.currentLog === 'access') {
+        viewer.innerHTML = logs.map(l => {
+            const color = l.status >= 400 ? 'lvl-err' : l.status >= 300 ? 'lvl-warn' : 'msg';
+            return `<div class="log-line"><span class="ts">[${l.ts}]</span> <span class="msg">${l.ip}</span> <span class="msg">${l.method}</span> <span class="${color}">${l.url}</span> <span class="${l.status >= 400 ? 'lvl-err' : 'lvl-info'}">${l.status}</span> <span class="msg">${l.size}</span> <span class="ts">${l.time}</span></div>`;
+        }).join('');
+    } else {
+        viewer.innerHTML = logs.map(l => {
+            const lvlClass = l.lvl === 'ERR' ? 'lvl-err' : l.lvl === 'WARN' ? 'lvl-warn' : 'lvl-info';
+            return `<div class="log-line"><span class="ts">[${l.ts}]</span> <span class="${lvlClass}">[${l.lvl}]</span> <span class="msg">${l.msg}</span></div>`;
+        }).join('');
+    }
+}
+
+function switchLog(el) {
+    document.querySelectorAll('.log-tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    state.currentLog = el.dataset.log;
+    renderLog();
+}
+
+function clearLog() {
+    logData[state.currentLog] = [];
+    renderLog();
+    showToast('Log dibersihkan', 'success');
+}
+
+function refreshLog() {
+    showToast('Log di-refresh', 'success');
+    renderLog();
+}
+
+function downloadLog() {
+    showToast('Log di-download', 'success');
+}
+
+// ===== CHARTS =====
+let trafficChart, resourceChart;
+const resourceData = { cpu: [], ram: [], labels: [] };
+
+function initCharts() {
+    // Traffic chart
+    const ctx1 = document.getElementById('trafficChart').getContext('2d');
+    const hours = Array.from({length: 24}, (_, i) => `${String(i).padStart(2,'0')}:00`);
+    const trafficData = [120,85,60,40,35,30,45,180,420,680,750,820,790,850,900,870,780,650,520,380,290,220,180,140];
+
+    trafficChart = new Chart(ctx1, {
+        type: 'bar',
+        data: {
+            labels: hours,
+            datasets: [{
+                label: 'Requests',
+                data: trafficData,
+                backgroundColor: 'rgba(0,214,143,0.3)',
+                borderColor: 'rgba(0,214,143,0.8)',
+                borderWidth: 1,
+                borderRadius: 4,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#555d7a', font: { size: 10, family: 'JetBrains Mono' }, maxTicksLimit: 12 }
+                },
+                y: {
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#555d7a', font: { size: 10, family: 'JetBrains Mono' } }
+                }
+            }
+        }
+    });
+
+    // Resource chart
+    const ctx2 = document.getElementById('resourceChart').getContext('2d');
+    for (let i = 0; i < 30; i++) {
+        resourceData.labels.push('');
+        resourceData.cpu.push(20 + Math.random() * 15);
+        resourceData.ram.push(25 + Math.random() * 10);
+    }
+
+    resourceChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: resourceData.labels,
+            datasets: [
+                {
+                    label: 'CPU %',
+                    data: resourceData.cpu,
+                    borderColor: '#00d68f',
+                    backgroundColor: 'rgba(0,214,143,0.1)',
+                    fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0,
+                },
+                {
+                    label: 'RAM %',
+                    data: resourceData.ram,
+                    borderColor: '#3b9eff',
+                    backgroundColor: 'rgba(59,158,255,0.1)',
+                    fill: true, tension: 0.4, borderWidth: 2, pointRadius: 0,
+                }
+            ]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            animation: { duration: 300 },
+            plugins: {
+                legend: {
+                    position: 'top', align: 'end',
+                    labels: { color: '#8890ab', font: { size: 11 }, boxWidth: 12, padding: 16 }
+                }
+            },
+            scales: {
+                x: { display: false },
+                y: {
+                    min: 0, max: 100,
+                    grid: { color: 'rgba(255,255,255,0.04)' },
+                    ticks: { color: '#555d7a', font: { size: 10, family: 'JetBrains Mono' }, callback: v => v + '%' }
+                }
+            }
+        }
+    });
+}
+
+// ===== LIVE UPDATE SERVER STATS =====
+function updateStats() {
+    const cpu = 18 + Math.random() * 20;
+    const ramPct = 25 + Math.random() * 15;
+    const ramUsed = ({{ $ram }} / 100 * 4).toFixed(1);
+    const disk = {{ $disk }};
+    const bw = 2 + Math.random() * 1.5;
+
+    document.getElementById('cpu-val').textContent = Math.round(cpu) + '%';
+    document.getElementById('cpu-bar').style.width = cpu + '%';
+
+    document.getElementById('ram-val').textContent = `${ramUsed} / 4 GB`;
+    document.getElementById('ram-bar').style.width = ramPct + '%';
+
+    document.getElementById('disk-val').textContent = disk.toFixed(1) + ' GB';
+    document.getElementById('disk-bar').style.width = (disk / 50 * 100) + '%';
+
+    document.getElementById('bw-val').textContent = bw.toFixed(1) + ' GB';
+    document.getElementById('bw-bar').style.width = (bw / 10 * 100) + '%';
+
+    // Update resource chart
+    if (resourceChart) {
+        resourceData.cpu.push(cpu);
+        resourceData.ram.push(ramPct);
+        resourceData.labels.push('');
+        if (resourceData.cpu.length > 30) {
+            resourceData.cpu.shift();
+            resourceData.ram.shift();
+            resourceData.labels.shift();
+        }
+        resourceChart.data.labels = resourceData.labels;
+        resourceChart.data.datasets[0].data = resourceData.cpu;
+        resourceChart.data.datasets[1].data = resourceData.ram;
+        resourceChart.update('none');
+    }
+}
+
+// ===== INIT =====
+function init() {
+    renderWebsites();
+    renderDatabases();
+    renderFiles();
+    renderSSL();
+    renderFirewall();
+    renderLog();
+    initCharts();
+
+    // Update stats setiap 2 detik
+    setInterval(updateStats, 2000);
+
+    // Simulasi log baru
+    setInterval(() => {
+        const methods = ['GET','POST','PUT'];
+        const urls = ['/','/api/dashboard','/api/websites','/css/app.css','/js/app.js','/images/logo.png'];
+        const ips = ['192.168.1.10','10.0.0.55','192.168.1.22','172.16.0.100'];
+        const now = new Date();
+        const ts = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+        const method = methods[Math.floor(Math.random()*methods.length)];
+        const url = urls[Math.floor(Math.random()*urls.length)];
+        const ip = ips[Math.floor(Math.random()*ips.length)];
+        const status = Math.random() > 0.1 ? 200 : (Math.random() > 0.5 ? 404 : 301);
+        logData.access.unshift({
+            ts, ip, method, url, status,
+            size: (Math.random() * 50).toFixed(1) + 'K',
+            time: Math.floor(Math.random() * 100) + 'ms'
+        });
+        if (logData.access.length > 100) logData.access.pop();
+        if (state.currentLog === 'access') renderLog();
+    }, 5000);
+}
+
+// Jalankan
+init();
+</script>
+</body>
+</html>
