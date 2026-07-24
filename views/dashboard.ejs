@@ -1,0 +1,410 @@
+  <div class="content">
+                    <div class="container-fluid">
+
+                        <!-- Page Title -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="page-title-box justify-content-between d-flex align-items-lg-center flex-lg-row flex-column">
+                                    <h4 class="page-title">Dashboard</h4>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-success" id="server-status"><i class="ri-checkbox-blank-circle-fill me-1"></i> Online</span>
+                                        <span class="text-muted" id="server-uptime">-</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 1: System Overview -->
+                        <div class="row row-cols-1 row-cols-xl-5 row-cols-lg-3 row-cols-md-2">
+                            <div class="col">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <div id="cpu-chart" class="apex-charts mb-2"></div>
+                                        <h6 class="text-muted mb-1">CPU</h6>
+                                        <small class="text-muted" id="cpu-model">-</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <div id="ram-chart" class="apex-charts mb-2"></div>
+                                        <h6 class="text-muted mb-1">RAM</h6>
+                                        <small class="text-muted"><span id="ramused">0</span> / <span id="ramtotal">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="card">
+                                    <div class="card-body text-center">
+                                        <div id="disk-chart" class="apex-charts mb-2"></div>
+                                        <h6 class="text-muted mb-1">Disk</h6>
+                                        <small class="text-muted"><span id="diskused">0</span> / <span id="disktotal">0</span></small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar-sm flex-shrink-0">
+                                                <span class="avatar-title text-bg-info rounded-3 fs-3">
+                                                    <i class="ri-server-line"></i>
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-0" id="cpu-cores">-</h5>
+                                                <small class="text-muted">CPU Cores</small>
+                                            </div>
+                                        </div>
+                                        <hr class="my-3">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar-sm flex-shrink-0">
+                                                <span class="avatar-title text-bg-warning rounded-3 fs-3">
+                                                    <i class="ri-load-chart-line"></i>
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-0" id="load-avg">-</h5>
+                                                <small class="text-muted">Load Average</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center gap-3">
+                                            <div class="avatar-sm flex-shrink-0">
+                                                <span class="avatar-title text-bg-success rounded-3 fs-3">
+                                                    <i class="ri-time-line"></i>
+                                                </span>
+                                            </div>
+                                            <div>
+                                                <h5 class="mb-0" id="uptime">-</h5>
+                                                <small class="text-muted">Uptime</small>
+                                            </div>
+                                        </div>
+                                        <hr class="my-3">
+                                        <div>
+                                            <small class="text-muted d-block">Hostname</small>
+                                            <h6 class="mb-0" id="hostname">-</h6>
+                                        </div>
+                                        <div class="mt-2">
+                                            <small class="text-muted d-block">Platform</small>
+                                            <h6 class="mb-0" id="platform">-</h6>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 2: Services Status -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="d-flex card-header justify-content-between align-items-center">
+                                        <h4 class="header-title">Services</h4>
+                                        <a href="/server/services" class="btn btn-sm btn-outline-primary">Manage</a>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row row-cols-1 row-cols-xl-4 row-cols-lg-2 g-3">
+                                            <div class="col">
+                                                <div class="border rounded-3 p-3 d-flex align-items-center gap-3">
+                                                    <div class="flex-shrink-0">
+                                                        <i class="ri-global-line fs-2 text-primary"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-1">OpenLiteSpeed</h6>
+                                                        <span class="badge" id="svc-ols">-</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="border rounded-3 p-3 d-flex align-items-center gap-3">
+                                                    <div class="flex-shrink-0">
+                                                        <i class="ri-database-2-line fs-2 text-success"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-1">MariaDB</h6>
+                                                        <span class="badge" id="svc-mariadb">-</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="border rounded-3 p-3 d-flex align-items-center gap-3">
+                                                    <div class="flex-shrink-0">
+                                                        <i class="ri-flashlight-line fs-2 text-danger"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-1">Redis</h6>
+                                                        <span class="badge" id="svc-redis">-</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col">
+                                                <div class="border rounded-3 p-3 d-flex align-items-center gap-3">
+                                                    <div class="flex-shrink-0">
+                                                        <i class="ri-box-3-line fs-2 text-info"></i>
+                                                    </div>
+                                                    <div class="flex-grow-1">
+                                                        <h6 class="mb-1">Docker</h6>
+                                                        <span class="badge" id="svc-docker">-</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 3: Quick Actions + System Info -->
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="header-title">Quick Actions</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-outline-primary d-flex align-items-center gap-2" type="button" disabled>
+                                                <i class="ri-restart-line"></i> Restart OpenLiteSpeed
+                                            </button>
+                                            <button class="btn btn-outline-success d-flex align-items-center gap-2" type="button" disabled>
+                                                <i class="ri-database-2-line"></i> Restart MariaDB
+                                            </button>
+                                            <button class="btn btn-outline-danger d-flex align-items-center gap-2" type="button" disabled>
+                                                <i class="ri-delete-bin-line"></i> Clear Redis Cache
+                                            </button>
+                                            <button class="btn btn-outline-warning d-flex align-items-center gap-2" type="button" disabled>
+                                                <i class="ri-refresh-line"></i> Clear OPcache
+                                            </button>
+                                        </div>
+                                        <div class="alert alert-warning mt-3 mb-0 d-flex align-items-center gap-2">
+                                            <i class="ri-information-line"></i>
+                                            <small>Actions will be available soon.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="header-title">System Info</h4>
+                                    </div>
+                                    <div class="card-body p-0">
+                                        <div class="table-responsive">
+                                            <table class="table table-borderless table-centered mb-0">
+                                                <tbody>
+                                                    <tr>
+                                                        <td class="ps-3"><i class="ri-computer-line text-muted me-2"></i> Hostname</td>
+                                                        <td class="pe-3 fw-semibold" id="info-hostname">-</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="ps-3"><i class="ri-windows-line text-muted me-2"></i> OS</td>
+                                                        <td class="pe-3 fw-semibold" id="info-os">-</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="ps-3"><i class="ri-cpu-line text-muted me-2"></i> CPU</td>
+                                                        <td class="pe-3 fw-semibold" id="info-cpu">-</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="ps-3"><i class="ri-hard-drive-line text-muted me-2"></i> Cores</td>
+                                                        <td class="pe-3 fw-semibold" id="info-cores">-</td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td class="ps-3"><i class="ri-time-line text-muted me-2"></i> Uptime</td>
+                                                        <td class="pe-3 fw-semibold" id="info-uptime">-</td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Row 4: Email Stats + Placeholder -->
+                        <div class="row">
+                            <div class="col-lg-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="header-title">Email Overview</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row text-center">
+                                            <div class="col">
+                                                <h3 class="fw-normal mb-1" id="mail-inbox">-</h3>
+                                                <p class="text-muted mb-0">Inbox</p>
+                                            </div>
+                                            <div class="col">
+                                                <h3 class="fw-normal mb-1" id="mail-unread">-</h3>
+                                                <p class="text-muted mb-0">Unread</p>
+                                            </div>
+                                            <div class="col">
+                                                <h3 class="fw-normal mb-1" id="mail-sent">-</h3>
+                                                <p class="text-muted mb-0">Sent</p>
+                                            </div>
+                                        </div>
+                                        <div class="alert alert-info mt-3 mb-0 d-flex align-items-center gap-2">
+                                            <i class="ri-information-line"></i>
+                                            <small>Email stats coming soon.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h4 class="header-title">Network Activity</h4>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="network-chart" class="apex-charts"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+<script>
+let ramChart, diskChart, cpuChart, networkChart;
+
+function getRadialBarOptions(color, value, label) {
+    return {
+        series: [value],
+        chart: { type: 'radialBar', height: 140 },
+        plotOptions: {
+            radialBar: {
+                startAngle: -135,
+                endAngle: 135,
+                hollow: { size: '65%' },
+                track: { background: 'rgba(170,184,197, 0.2)', margin: 0 },
+                dataLabels: {
+                    name: { show: false },
+                    value: { show: true, fontSize: '20px', fontWeight: 600, offsetY: 20, formatter: (val) => val + '%' }
+                }
+            }
+        },
+        fill: { type: 'gradient', gradient: { shade: 'dark', type: 'horizontal', shadeIntensity: 0.2, opacityFrom: 1, opacityTo: 1, stops: [0, 50, 65, 91] } },
+        stroke: { dashArray: 4 },
+        colors: [color],
+        labels: [label],
+        grid: { padding: { top: 0, right: 0, bottom: 0, left: 0 } }
+    };
+}
+
+function getLineChartOptions(color, data, label) {
+    return {
+        series: [{ name: label, data: data }],
+        chart: { type: 'area', height: 200, sparkline: { enabled: true } },
+        stroke: { curve: 'smooth', width: 2 },
+        fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.1, stops: [0, 100] } },
+        colors: [color],
+        xaxis: { show: false },
+        yaxis: { show: false },
+        tooltip: { enabled: false }
+    };
+}
+
+function getColor(percent, warn, danger) {
+    if (percent >= danger) return '#dc3545';
+    if (percent >= warn) return '#ffc107';
+    return '#198754';
+}
+
+function serviceBadge(status) {
+    if (status === 'active') return '<span class="badge bg-success"><i class="ri-checkbox-blank-circle-fill me-1"></i>Active</span>';
+    return '<span class="badge bg-danger"><i class="ri-checkbox-blank-circle-fill me-1"></i>Inactive</span>';
+}
+
+let chartInited = false;
+
+function initCharts() {
+    cpuChart = new ApexCharts(document.querySelector('#cpu-chart'), getRadialBarOptions('#4254ba', 0, 'CPU'));
+    ramChart = new ApexCharts(document.querySelector('#ram-chart'), getRadialBarOptions('#198754', 0, 'RAM'));
+    diskChart = new ApexCharts(document.querySelector('#disk-chart'), getRadialBarOptions('#17a497', 0, 'Disk'));
+    networkChart = new ApexCharts(document.querySelector('#network-chart'), getLineChartOptions('#4254ba', [], 'Network'));
+
+    cpuChart.render();
+    ramChart.render();
+    diskChart.render();
+    networkChart.render();
+    chartInited = true;
+}
+
+async function refreshDashboard() {
+    try {
+        const res = await fetch('/api/dashboard/stats');
+        const data = await res.json();
+
+        const ram = data.server.ram;
+        const disk = data.server.disk;
+        const cpu = data.server.cpu;
+
+        const ramPercent = ram.percent;
+        const ramUsedGB = (ram.used / 1024 / 1024 / 1024).toFixed(1);
+        const ramTotalGB = (ram.total / 1024 / 1024 / 1024).toFixed(1);
+
+        document.getElementById('ramused').innerText = ramUsedGB + ' GB';
+        document.getElementById('ramtotal').innerText = ramTotalGB + ' GB';
+
+        const cpuPercent = cpu.percent;
+        document.getElementById('cpu-model').innerText = cpu.cores + ' cores';
+        document.getElementById('cpu-cores').innerText = cpu.cores + ' Cores';
+        document.getElementById('load-avg').innerText = cpu.load[0].toFixed(2);
+
+        document.getElementById('uptime').innerText = data.server.uptime;
+        document.getElementById('hostname').innerText = data.server.hostname;
+        document.getElementById('platform').innerText = data.server.platform.os + ' ' + data.server.platform.release.substring(0, 20);
+
+        document.getElementById('info-hostname').innerText = data.server.hostname;
+        document.getElementById('info-os').innerText = data.server.platform.os + ' ' + data.server.platform.arch;
+        document.getElementById('info-cpu').innerText = cpu.model.substring(0, 40);
+        document.getElementById('info-cores').innerText = cpu.cores;
+        document.getElementById('info-uptime').innerText = data.server.uptime;
+
+        document.getElementById('svc-ols').innerHTML = serviceBadge(data.services.ols.status);
+        document.getElementById('svc-mariadb').innerHTML = serviceBadge(data.services.mariadb.status);
+        document.getElementById('svc-redis').innerHTML = serviceBadge(data.services.redis.status);
+        document.getElementById('svc-docker').innerHTML = serviceBadge(data.services.docker.status);
+
+        if (chartInited) {
+            const ramColor = getColor(ramPercent, 70, 90);
+            ramChart.updateOptions({ series: [ramPercent], colors: [ramColor] });
+
+            if (disk) {
+                const diskPercent = parseFloat(disk.percent) || 0;
+                const diskUsedGB = (disk.used / 1024 / 1024 / 1024).toFixed(1);
+                const diskTotalGB = (disk.total / 1024 / 1024 / 1024).toFixed(1);
+                document.getElementById('diskused').innerText = diskUsedGB + ' GB';
+                document.getElementById('disktotal').innerText = diskTotalGB + ' GB';
+                const diskColor = getColor(diskPercent, 80, 95);
+                diskChart.updateOptions({ series: [diskPercent], colors: [diskColor] });
+            }
+
+            const cpuColor = getColor(cpuPercent, 60, 85);
+            cpuChart.updateOptions({ series: [cpuPercent], colors: [cpuColor] });
+        }
+
+    } catch (err) {
+        console.error('Dashboard refresh error:', err);
+    }
+}
+
+window.addEventListener('load', function() {
+    function tryInit(retries) {
+        if (typeof ApexCharts !== 'undefined') {
+            initCharts();
+            refreshDashboard();
+            setInterval(refreshDashboard, 2000);
+        } else if (retries > 0) {
+            setTimeout(function() { tryInit(retries - 1); }, 200);
+        }
+    }
+    tryInit(20);
+});
+</script>

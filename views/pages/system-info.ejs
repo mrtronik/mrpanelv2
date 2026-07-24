@@ -1,0 +1,274 @@
+<div class="content">
+    <div class="container-fluid">
+
+        <div class="row">
+            <div class="col-12">
+                <div class="page-title-box justify-content-between d-flex align-items-lg-center flex-lg-row flex-column">
+                    <h4 class="page-title"><i class="fas fa-server me-2"></i>System Information</h4>
+                    <div class="d-flex align-items-center">
+                        <span class="text-muted">System Info & File > System Information</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-info-circle me-1"></i> System Information</div>
+                    <div class="card-body p-0">
+                        <table class="table table-bordered mb-0">
+                            <tbody>
+                                <tr><td style="width:40%"><strong>Hostname</strong></td><td><%= system.hostname %></td></tr>
+                                <tr><td><strong>Home Directory</strong></td><td><%= system.homeDirectory %></td></tr>
+                                <tr><td><strong>Uptime</strong></td><td><%= system.uptime %></td></tr>
+                                <tr><td><strong>Cores Count</strong></td><td><%= system.coresCount %></td></tr>
+                                <tr><td><strong>OS</strong></td><td><%= system.osType %> <%= system.osRelease %></td></tr>
+                                <tr><td><strong>Architecture</strong></td><td><%= system.arch %></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-microchip me-1"></i> CPU</div>
+                    <div class="card-body p-0">
+                        <table class="table table-bordered mb-0">
+                            <thead>
+                                <tr><th>Brand</th><th>Model</th><th>BogoMIPS</th><th>Speed</th></tr>
+                            </thead>
+                            <tbody>
+                                <% cpu.forEach(function(c) { %>
+                                <tr>
+                                    <td><%= c.brand %></td>
+                                    <td><%= c.model %></td>
+                                    <td><%= c.bogoMIPS %></td>
+                                    <td><%= c.speed %></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-12">
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-hdd me-1"></i> File System Information</div>
+                    <div class="card-body p-0">
+                        <table class="table table-bordered mb-0">
+                            <thead>
+                                <tr><th>Device</th><th>Type</th><th>Size</th><th>Used</th><th>Available</th><th>Mounted on</th></tr>
+                            </thead>
+                            <tbody>
+                                <% fileSystem.forEach(function(fs) { %>
+                                <tr>
+                                    <td><%= fs.device %></td>
+                                    <td><%= fs.type %></td>
+                                    <td><%= fs.size %></td>
+                                    <td><%= fs.used %></td>
+                                    <td><%= fs.available %></td>
+                                    <td><%= fs.mountedOn %></td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <% diskUsage.forEach(function(d) { %>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-chart-pie me-1"></i> Disk Usage <%= d.mount %></div>
+                    <div class="card-body text-center">
+                        <div id="disk-chart-<%= d.mount.replace(/\//g, '-') %>" style="min-height: 280px;"></div>
+                    </div>
+                </div>
+            </div>
+            <% }); %>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-memory me-1"></i> RAM Memory Information</div>
+                    <div class="card-body text-center">
+                        <div id="ram-chart" style="min-height: 300px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-exchange-alt me-1"></i> Swap</div>
+                    <div class="card-body text-center">
+                        <% if (memory.swap.totalBytes > 0) { %>
+                        <div id="swap-chart" style="min-height: 300px;"></div>
+                        <% } else { %>
+                        <div class="text-muted" style="padding: 80px 0; font-size: 2rem;">N/A</div>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-cogs me-1"></i> Services</div>
+                    <div class="card-body p-0">
+                        <table class="table table-bordered mb-0">
+                            <thead>
+                                <tr><th>Service</th><th>Version</th><th>Status</th></tr>
+                            </thead>
+                            <tbody>
+                                <% services.forEach(function(s) { %>
+                                <tr>
+                                    <td><strong><%= s.name %></strong></td>
+                                    <td><%= s.version %></td>
+                                    <td>
+                                        <% if (s.status === 'running') { %>
+                                        <span class="badge bg-success text-white">Running</span>
+                                        <% } else { %>
+                                        <span class="badge bg-danger text-white">Stopped</span>
+                                        <% } %>
+                                    </td>
+                                </tr>
+                                <% }); %>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header"><i class="fas fa-tachometer-alt me-1"></i> Load Average</div>
+                    <div class="card-body p-0">
+                        <table class="table table-bordered mb-0">
+                            <tbody>
+                                <tr><td style="width:60%"><strong>Last 1 minute</strong></td><td><%= loadAverage.one %></td></tr>
+                                <tr><td><strong>Last 5 minutes</strong></td><td><%= loadAverage.five %></td></tr>
+                                <tr><td><strong>Last 15 minutes</strong></td><td><%= loadAverage.fifteen %></td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var diskUsage = <%- JSON.stringify(diskUsage) %>;
+    var memory = <%- JSON.stringify(memory) %>;
+
+    diskUsage.forEach(function(d) {
+        var chartId = 'disk-chart-' + d.mount.replace(/\//g, '-');
+        var el = document.getElementById(chartId);
+        if (!el) return;
+
+        var usedGB = (d.usedBytes / (1024*1024*1024)).toFixed(2);
+        var availGB = (d.availableBytes / (1024*1024*1024)).toFixed(2);
+        var reserved = (d.totalBytes - d.usedBytes - d.availableBytes) / (1024*1024*1024);
+        var totalGB = (d.totalBytes / (1024*1024*1024)).toFixed(2);
+
+        new ApexCharts(el, {
+            chart: { type: 'donut', height: 280 },
+            series: [parseFloat(usedGB), parseFloat(availGB), Math.max(0, parseFloat(reserved.toFixed(2)))],
+            labels: ['Used', 'Available', 'Reserved'],
+            colors: ['#ff6b6b', '#51cf66', '#339af0'],
+            legend: { position: 'bottom', fontSize: '12px' },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val, opts) {
+                    return opts.w.config.labels[opts.seriesIndex] + ': ' + opts.w.config.series[opts.seriesIndex] + ' GB';
+                }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        labels: {
+                            show: true,
+                            name: { show: true },
+                            value: { show: false }
+                        }
+                    }
+                }
+            }
+        }).render();
+    });
+
+    if (memory.ram.totalBytes > 0) {
+        var ramUsed = (memory.ram.usedBytes / (1024*1024*1024)).toFixed(2);
+        var ramFree = (memory.ram.freeBytes / (1024*1024*1024)).toFixed(2);
+        var ramCached = (memory.ram.cachedBytes / (1024*1024*1024)).toFixed(2);
+        var ramTotal = (memory.ram.totalBytes / (1024*1024*1024)).toFixed(2);
+
+        new ApexCharts(document.getElementById('ram-chart'), {
+            chart: { type: 'donut', height: 300 },
+            series: [parseFloat(ramUsed), parseFloat(ramFree), parseFloat(ramCached)],
+            labels: ['Used', 'Free', 'Cached'],
+            colors: ['#ff6b6b', '#51cf66', '#339af0'],
+            legend: { position: 'bottom', fontSize: '12px' },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val, opts) {
+                    return opts.w.config.labels[opts.seriesIndex] + ': ' + opts.w.config.series[opts.seriesIndex] + ' GB';
+                }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        labels: {
+                            show: true,
+                            name: { show: true, formatter: function() { return 'Total: ' + ramTotal + ' GB'; } },
+                            value: { show: false }
+                        }
+                    }
+                }
+            }
+        }).render();
+    }
+
+    if (memory.swap.totalBytes > 0) {
+        var swapUsed = (memory.swap.usedBytes / (1024*1024*1024)).toFixed(2);
+        var swapFree = (memory.swap.freeBytes / (1024*1024*1024)).toFixed(2);
+        var swapTotal = (memory.swap.totalBytes / (1024*1024*1024)).toFixed(2);
+
+        new ApexCharts(document.getElementById('swap-chart'), {
+            chart: { type: 'donut', height: 300 },
+            series: [parseFloat(swapUsed), parseFloat(swapFree)],
+            labels: ['Used', 'Free'],
+            colors: ['#ff6b6b', '#51cf66'],
+            legend: { position: 'bottom', fontSize: '12px' },
+            dataLabels: {
+                enabled: true,
+                formatter: function(val, opts) {
+                    return opts.w.config.labels[opts.seriesIndex] + ': ' + opts.w.config.series[opts.seriesIndex] + ' GB';
+                }
+            },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        labels: {
+                            show: true,
+                            name: { show: true, formatter: function() { return 'Total: ' + swapTotal + ' GB'; } },
+                            value: { show: false }
+                        }
+                    }
+                }
+            }
+        }).render();
+    }
+});
+</script>
